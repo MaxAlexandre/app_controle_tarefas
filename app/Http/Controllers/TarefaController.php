@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NovaTarefaMail;
 use App\Models\Tarefa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class TarefaController extends Controller
 {
@@ -21,35 +23,9 @@ class TarefaController extends Controller
      */
     public function index()
     {
-        $id = auth()->user()->id;
-        $nome = auth()->user()->name;
-        $email = auth()->user()->email;
-
-        return "ID: $id | Nome: $nome | Email: $email";
-        /*
-        if(Auth::check()){
-            $id = Auth::user()->id;
-            $nome = Auth::user()->name;
-            $email = Auth::user()->email;
-
-            return "ID: $id | Nome: $nome | Email: $email";
-        }else{
-            return 'Você não está logado no sistema';
-        }
-        */
-
-        /*
-        if(auth()->check()){
-            $id = auth()->user()->id;
-            $nome = auth()->user()->name;
-            $email = auth()->user()->email;
-
-            return "ID: $id | Nome: $nome | Email: $email";
-        }else{
-            return 'Você não está logado no sistema';
-        }
-        */
-
+        $user_id = auth()->user()->id;
+        $tarefas = Tarefa::where('user_id', $user_id)->get();
+        return view('tarefa.index', ['tarefas' => $tarefas]);
     }
 
     /**
@@ -70,7 +46,11 @@ class TarefaController extends Controller
      */
     public function store(Request $request)
     {
-       $tarefa =  Tarefa::create($request->all());
+       $dados = $request->all();
+       $dados['user_id'] = auth()->user()->id;
+       $tarefa =  Tarefa::create($dados);
+       $destinatario = auth()->user()->email; //email do usuário logado (autenticado)
+       Mail::to($destinatario)->send(new NovaTarefaMail($tarefa));
        return redirect()->route('tarefa.show', ['tarefa' => $tarefa->id]);
     }
 
@@ -82,7 +62,7 @@ class TarefaController extends Controller
      */
     public function show(Tarefa $tarefa)
     {
-        dd($tarefa);
+        return view('tarefa.show', ['tarefa' => $tarefa]);
     }
 
     /**
