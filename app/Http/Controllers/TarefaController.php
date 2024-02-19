@@ -35,29 +35,29 @@ class TarefaController extends Controller
      */
     public function create()
     {
-       return view('tarefa.create');
+        return view('tarefa.create');
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-       $dados = $request->all();
-       $dados['user_id'] = auth()->user()->id;
-       $tarefa =  Tarefa::create($dados);
-       $destinatario = auth()->user()->email; //email do usuário logado (autenticado)
-       Mail::to($destinatario)->send(new NovaTarefaMail($tarefa));
-       return redirect()->route('tarefa.show', ['tarefa' => $tarefa->id]);
+        $dados = $request->all();
+        $dados['user_id'] = auth()->user()->id;
+        $tarefa = Tarefa::create($dados);
+        $destinatario = auth()->user()->email; //email do usuário logado (autenticado)
+        Mail::to($destinatario)->send(new NovaTarefaMail($tarefa));
+        return redirect()->route('tarefa.show', ['tarefa' => $tarefa->id]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Tarefa  $tarefa
+     * @param \App\Models\Tarefa $tarefa
      * @return \Illuminate\Http\Response
      */
     public function show(Tarefa $tarefa)
@@ -68,35 +68,52 @@ class TarefaController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\Tarefa  $tarefa
+     * @param \App\Models\Tarefa $tarefa
      * @return \Illuminate\Http\Response
      */
     public function edit(Tarefa $tarefa)
     {
-        return view('tarefa.edit', ['tarefa' => $tarefa]);
+        $user_id = auth()->user()->id;
+
+        if ($tarefa->user_id == $user_id) {
+            return view('tarefa.edit', ['tarefa' => $tarefa]);
+        }
+        return view('acesso-negado');
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Tarefa  $tarefa
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Tarefa $tarefa
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, Tarefa $tarefa)
     {
+
+
+        if (!$tarefa->user_id == auth()->user()->id) {
+            return view('acesso-negado');
+        }
+
         $tarefa->update($request->all());
-        return redirect()->route('tarefa.show',['tarefa' => $tarefa->id]);
+        return redirect()->route('tarefa.show', ['tarefa' => $tarefa->id]);
+
+
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Tarefa  $tarefa
+     * @param \App\Models\Tarefa $tarefa
      * @return \Illuminate\Http\Response
      */
     public function destroy(Tarefa $tarefa)
     {
-        //
+        if (!$tarefa->user_id == auth()->user()->id) {
+            return view('acesso-negado');
+        }
+        $tarefa->delete();
+        return redirect()->route('tarefa.index');
     }
 }
